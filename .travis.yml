@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t hizak/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true hizak/react-test npm test -- --watchAll=false
+
+after_success:
+  - docker build -t hizak/multi-client ./client
+  - docker build -t hizak/multi-nginx ./nginx
+  - docker build -t hizak/multi-server ./server
+  - docker build -t hizak/multi-worker ./worker
+  # Log in to the Docker CLI 
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # take those images and push them to docker hub
+  - docker push hizak/multi-client
+  - docker push hizak/multi-nginx
+  - docker push hizak/multi-server
+  - docker push hizak/multi-worker
